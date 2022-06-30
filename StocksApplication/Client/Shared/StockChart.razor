@@ -1,7 +1,7 @@
 ﻿@using StocksApplication.Shared.Models
 @using Syncfusion.Blazor.Charts
 
-<SfStockChart @ref="_chart" Title="OHCL Chart">
+<SfStockChart Title="OHCL Chart">
     <StockChartCrosshairSettings Enable="true" LineType="LineType.Vertical"></StockChartCrosshairSettings>
     <StockChartTooltipSettings Enable="true" Shared="true"></StockChartTooltipSettings>
     <StockChartSeriesCollection>
@@ -10,7 +10,6 @@
 </SfStockChart>
 
 @code {
-    SfStockChart _chart;
     [Parameter]
     public List<OhlcModel> Data { get; set; }
 }

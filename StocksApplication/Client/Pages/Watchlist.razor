@@ -1,0 +1,55 @@
+﻿@page "/Watchlist"
+@inject HttpClient _httpClient
+@inject NavigationManager _navigation
+@using Syncfusion.Blazor.Grids
+@using StocksApplication.Shared.Dtos
+<h2>Watchlist</h2>
+
+<SfGrid DataSource="@_data" TValue="CompanyDto" AllowFiltering="true" AllowPaging="true" AllowSorting="true">
+    <GridPageSettings PageSize="7"/>
+    <GridEvents OnLoad="@LoadData" OnBatchDelete="@Delete" TValue="CompanyDto"/>
+    <GridEditSettings AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+
+    <GridColumns>
+        <GridColumn HeaderText="Logo" TextAlign="TextAlign.Left">
+            <Template>
+                @{
+                    var company = context as CompanyDto;
+                    <div>
+                        <img src="@company.LogoUrl" alt="No logo" height="100"/>
+                    </div>
+                }
+            </Template>
+        </GridColumn>
+        <GridColumn Field="@nameof(CompanyDto.Ticker)" HeaderText="Symbol" TextAlign="TextAlign.Left"/>
+        <GridColumn Field="@nameof(CompanyDto.Name)" HeaderText="Name" TextAlign="TextAlign.Left"/>
+        <GridColumn Field="@nameof(CompanyDto.SicDescription)" HeaderText="Industry" TextAlign="TextAlign.Left"/>
+        <GridColumn Field="@nameof(CompanyDto.Locale)" HeaderText="Locale" TextAlign="TextAlign.Left"/>
+        <GridColumn HeaderText="Options" TextAlign="TextAlign.Left">
+            <GridCommandColumns>
+                <GridCommandColumn Type="CommandButtonType.Delete" ButtonOption="@(new CommandButtonOptions() {IconCss = "e-icons e-delete", CssClass = "e-flat"})"/>
+            </GridCommandColumns>
+        </GridColumn>
+    </GridColumns>
+</SfGrid>
+
+<button class="btn btn-primary" @onclick="ToDashboard">Back</button>
+
+@code {
+    private List<CompanyDto> _data;
+
+    private async Task LoadData()
+    {
+        _data = await _httpClient.GetFromJsonAsync<List<CompanyDto>>("api/Watchlist");
+    }
+
+    private void ToDashboard()
+    {
+        _navigation.NavigateTo("/");
+    }
+
+    private async Task Delete(BeforeBatchDeleteArgs<CompanyDto> args)
+    {
+        await _httpClient.DeleteAsync($"api/Watchlist/{args.RowData.Id}");
+    }
+}

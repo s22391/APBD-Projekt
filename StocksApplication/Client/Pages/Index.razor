@@ -7,19 +7,21 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using StocksApplication.Shared.Models
+@using System.Net
 
 <div style="display: flex">
     <h2>Dashboard</h2>
     <button class="btn btn-primary ml-4" @onclick="SignOut" style="float: inside">Logout</button>
-    <button class="btn btn-primary ml-4" style="float: right">Watch list</button>
-    @if (_companyData is not null)
+    <button class="btn btn-primary ml-4" @onclick="ToWatchlist" style="float: right">Watchlist</button>
+    @if (_displayAddButton)
     {
-        <button class="btn btn-primary ml-4">+</button>
+        <button class="btn btn-primary ml-4" @onclick="AddToWatchlist">+</button>
     }
 </div>
 
 <hr />
 <SearchBar Search="OnSearch"></SearchBar>
+<hr />
 
 @if (_companyData is null)
 {
@@ -46,10 +48,11 @@ else
                 <div>@_companyData.Company.Name (@_companyData.Company.Ticker)</div>
                 <div>Industry: @_companyData.Company.SicDescription</div>
                 <div>Locale: @_companyData.Company.Locale</div>
-                <div>Website: @_companyData.Company.HomePageUrl</div>
+                <div>Website: <a href="@_companyData.Company.HomePageUrl" target="_blank">@_companyData.Company.HomePageUrl</a></div>
             </div>
         </div>
     }
+    <hr />
     if (_chartData is null || _chartData.Count == 0)
     {
         <h2 style="text-align: center">Failed to load chart data.</h2>
@@ -58,6 +61,7 @@ else
     {
         <StockChart Data="_chartData" />
     }
+    <hr />
     if (_companyData.DailyOhlc is null)
     {
         <h2 style="text-align: center">Failed to load daily OHLC.</h2>
@@ -107,18 +111,29 @@ else
 
     private List<ArticleDto> _articles;
 
+    private bool _displayAddButton = false;
+
     private async Task OnSearch(TickerDto dto)
     {
         if (dto is null)
         {
             return;
         }
+        _displayAddButton = false;
         _companyData = await _http.GetFromJsonAsync<CompanyDataDto>($"api/Ticker/{dto.Id}");
         _chartData = new List<OhlcModel>();
         _articles = new List<ArticleDto>();
         if (_companyData?.Ohlcs is null || !_companyData.Ohlcs.Any())
         {
             return;
+        }
+        if (_companyData.Company is null)
+        {
+            _displayAddButton = false;
+        }
+        else
+        {
+            _displayAddButton = await _http.GetFromJsonAsync<bool>($"api/Watchlist/{_companyData.Company.Id}");
         }
         _chartData.AddRange(_companyData.Ohlcs.Select(e => new OhlcModel
         {
@@ -139,6 +154,24 @@ else
     {
         await _signOutManager.SetSignOutState();
         _navigation.NavigateTo("authentication/logout");
+    }
+
+    private void ToWatchlist()
+    {
+        _navigation.NavigateTo("Watchlist");
+    }
+
+    private async Task AddToWatchlist()
+    {
+        Console.WriteLine("aaaa");
+        var response = await _http.PostAsJsonAsync($"api/Watchlist", new CompanyIdDto
+        {
+            CompanyId = _companyData.Company.Id
+        });
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            _displayAddButton = false;
+        }
     }
 
     private DateTime NormalizeDate(double t)

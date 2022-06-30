@@ -14,6 +14,7 @@ using StocksApplication.Shared.Dtos;
 
 namespace StocksApplication.Server.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class TickerController : ControllerBase
