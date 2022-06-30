@@ -1,0 +1,148 @@
+﻿@page "/"
+@inject HttpClient _http
+@inject NavigationManager _navigation
+@inject SignOutSessionStateManager _signOutManager
+@attribute [Authorize]
+@using StocksApplication.Shared.Dtos
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using StocksApplication.Shared.Models
+
+<div style="display: flex">
+    <h2>Dashboard</h2>
+    <button class="btn btn-primary ml-4" @onclick="SignOut" style="float: inside">Logout</button>
+    <button class="btn btn-primary ml-4" style="float: right">Watch list</button>
+    @if (_companyData is not null)
+    {
+        <button class="btn btn-primary ml-4">+</button>
+    }
+</div>
+
+<hr />
+<SearchBar Search="OnSearch"></SearchBar>
+
+@if (_companyData is null)
+{
+    <div>
+        <h2 style="text-align: center">
+            CHOOSE COMPANY
+        </h2>
+    </div>
+}
+else
+{
+    if (_companyData.Company is null)
+    {
+        <h2 style="text-align: center">Failed to load Company info.</h2>
+    }
+    else
+    {
+        <div class="d-flex justify-content-center" style="display: flex">
+            @if (_companyData.Company.LogoUrl is not null)
+            {
+                <img src="@_companyData.Company.LogoUrl" height="100"/>
+            }
+            <div>
+                <div>@_companyData.Company.Name (@_companyData.Company.Ticker)</div>
+                <div>Industry: @_companyData.Company.SicDescription</div>
+                <div>Locale: @_companyData.Company.Locale</div>
+                <div>Website: @_companyData.Company.HomePageUrl</div>
+            </div>
+        </div>
+    }
+    if (_chartData is null || _chartData.Count == 0)
+    {
+        <h2 style="text-align: center">Failed to load chart data.</h2>
+    }
+    else
+    {
+        <StockChart Data="_chartData" />
+    }
+    if (_companyData.DailyOhlc is null)
+    {
+        <h2 style="text-align: center">Failed to load daily OHLC.</h2>
+    }
+    else
+    {
+        <div class="d-flex justify-content-center" style="display: flex">
+            <div>
+                <div>From: @_companyData.DailyOhlc.From.ToString("dd.MM.yyyy")</div>
+                <div>Symbol: @_companyData.DailyOhlc.Symbol</div>
+                <div>Open: @_companyData.DailyOhlc.Open</div>
+                <div>High: @_companyData.DailyOhlc.High</div>
+                <div>Low: @_companyData.DailyOhlc.Low</div>
+            </div>
+            <div>
+                <div>Close: @_companyData.DailyOhlc.Close</div>
+                <div>Volume: @_companyData.DailyOhlc.Volume</div>
+                <div>After hours: @_companyData.DailyOhlc.AfterHours</div>
+                <div>Pre market: @_companyData.DailyOhlc.PreMarket</div>
+            </div>
+        </div>
+    }
+    if (!_articles.Any())
+    {
+        <h2 style="text-align: center">Failed to load Articles.</h2>
+    }
+    else
+    {
+        <h2>Last 5 articles</h2>
+        @foreach (var article in _articles)
+        {
+            <hr />
+            <a href="@article.Url" target="_blank">
+                <div>@article.Author</div>
+                <div>@article.Title</div>
+                <div>@article.Published</div>
+            </a>
+        }
+    }
+}
+
+@code
+{
+    private CompanyDataDto _companyData;
+
+    private List<OhlcModel> _chartData;
+
+    private List<ArticleDto> _articles;
+
+    private async Task OnSearch(TickerDto dto)
+    {
+        if (dto is null)
+        {
+            return;
+        }
+        _companyData = await _http.GetFromJsonAsync<CompanyDataDto>($"api/Ticker/{dto.Id}");
+        _chartData = new List<OhlcModel>();
+        _articles = new List<ArticleDto>();
+        if (_companyData?.Ohlcs is null || !_companyData.Ohlcs.Any())
+        {
+            return;
+        }
+        _chartData.AddRange(_companyData.Ohlcs.Select(e => new OhlcModel
+        {
+            V = e.V,
+            O = e.O,
+            C = e.C,
+            H = e.H,
+            L = e.L,
+            T = NormalizeDate(e.T)
+        }));
+        if (_companyData.Articles.Any())
+        {
+            _articles.AddRange(_companyData.Articles);
+        }
+    }
+
+    private async Task SignOut()
+    {
+        await _signOutManager.SetSignOutState();
+        _navigation.NavigateTo("authentication/logout");
+    }
+
+    private DateTime NormalizeDate(double t)
+    {
+        return new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(t).ToLocalTime();
+    }
+}

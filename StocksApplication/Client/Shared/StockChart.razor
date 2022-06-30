@@ -1,0 +1,16 @@
+﻿@using StocksApplication.Shared.Models
+@using Syncfusion.Blazor.Charts
+
+<SfStockChart @ref="_chart" Title="OHCL Chart">
+    <StockChartCrosshairSettings Enable="true" LineType="LineType.Vertical"></StockChartCrosshairSettings>
+    <StockChartTooltipSettings Enable="true" Shared="true"></StockChartTooltipSettings>
+    <StockChartSeriesCollection>
+        <StockChartSeries DataSource="@Data" Type="ChartSeriesType.HiloOpenClose" XName="T" YName="C" High="H" Low="L" Open="O" Close="C" Volume="V"/>
+    </StockChartSeriesCollection>
+</SfStockChart>
+
+@code {
+    SfStockChart _chart;
+    [Parameter]
+    public List<OhlcModel> Data { get; set; }
+}

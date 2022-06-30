@@ -1,0 +1,42 @@
+﻿@inject HttpClient _http
+@using Syncfusion.Blazor.DropDowns
+@using StocksApplication.Shared.Dtos
+
+<div style="display: flex">
+    <SfAutoComplete TValue="TickerDto" TItem="TickerDto" Placeholder="Insert company symbol" DataSource="@Data" @bind-Value="SearchedTicker">
+        <AutoCompleteFieldSettings Value="Ticker"/>
+        <AutoCompleteEvents TItem="TickerDto" TValue="TickerDto" Filtering="OnFilter"/>
+        <AutoCompleteTemplates TItem="TickerDto">
+            <ItemTemplate>
+                <div>
+                    <span style="float: left">@(context.Ticker)</span>
+                    <span style="float: right">@(context.Name)</span>
+                </div>
+            </ItemTemplate>
+        </AutoCompleteTemplates>
+    </SfAutoComplete>
+    <button class="btn btn-primary" @onclick="OnSearch">Search</button>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<TickerDto> Search { get; set; }
+    private TickerDto SearchedTicker { get; set; }
+    private List<TickerDto> Data { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Data = await _http.GetFromJsonAsync<List<TickerDto>>($"api/Ticker");
+        await base.OnInitializedAsync();
+    }
+
+    private async Task OnFilter(FilteringEventArgs args)
+    {
+        Data = await _http.GetFromJsonAsync<List<TickerDto>>($"api/Ticker?search={args.Text}");
+    }
+
+    private async Task OnSearch()
+    {
+        await Search.InvokeAsync(SearchedTicker);
+    }
+}
