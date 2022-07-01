@@ -163,7 +163,6 @@ else
 
     private async Task AddToWatchlist()
     {
-        Console.WriteLine("aaaa");
         var response = await _http.PostAsJsonAsync($"api/Watchlist", new CompanyIdDto
         {
             CompanyId = _companyData.Company.Id

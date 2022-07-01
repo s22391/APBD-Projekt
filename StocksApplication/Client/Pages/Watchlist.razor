@@ -1,8 +1,10 @@
 ﻿@page "/Watchlist"
 @inject HttpClient _httpClient
 @inject NavigationManager _navigation
+@attribute [Authorize]
 @using Syncfusion.Blazor.Grids
 @using StocksApplication.Shared.Dtos
+@using Microsoft.AspNetCore.Authorization
 <h2>Watchlist</h2>
 
 <SfGrid DataSource="@_data" TValue="CompanyDto" AllowFiltering="true" AllowPaging="true" AllowSorting="true">
